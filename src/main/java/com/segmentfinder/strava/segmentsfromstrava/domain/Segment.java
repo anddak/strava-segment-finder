@@ -1,118 +1,205 @@
 package com.segmentfinder.strava.segmentsfromstrava.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-
-/**
- *  model class for a segment fetched from Strava using Strava's segment explore endpoint which returns an instance of
- *  Strava's ExplorerResponse entity
- */
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({
+        "id",
+        "resource_state",
+        "name",
+        "climb_category",
+        "climb_category_desc",
+        "avg_grade",
+        "start_latlng",
+        "end_latlng",
+        "elev_difference",
+        "distance",
+        "points",
+        "starred"
+})
 public class Segment {
 
-  /**
-   * The unique identifier of the segment
-   */
-  private long id;
-
-  /**
-   * 	The name of the segment
-   */
+  @JsonProperty("id")
+  private Integer id;
+  @JsonProperty("resource_state")
+  private Integer resourceState;
+  @JsonProperty("name")
   private String name;
-
-  /**
-   * The category of the climb [0, 5]. Higher is harder ie. 5 is Hors catégorie, 0 is uncategorized in climb_category.
-   * If climb_category = 5, climb_category_desc = HC. If climb_category = 2, climb_category_desc = 3.
-   */
-  private int climbCategory;
-
-  /**
-   * The description for the category of the climb May take one of the following values: NC, 4, 3, 2, 1, HC
-   */
+  @JsonProperty("climb_category")
+  private Integer climbCategory;
+  @JsonProperty("climb_category_desc")
   private String climbCategoryDesc;
-
-  /**
-   * The segment's average grade, in percents.
-   */
-  private double avgGrade;
-
-  /**
-   * A collection of float objects. A pair of latitude/longitude coordinates,
-   * represented as an array of 2 floating point numbers.
-   */
-  private List startLatLong;
-  private List endLatLong;
-
-  /**
-   * The segments's evelation difference, in meters
-   */
-  private double elevationDifference;
-
-  /**
-   * The segment's distance, in meters
-   */
-  private double distance;
-
-  /**
-   * The polyline of the segment
-   */
+  @JsonProperty("avg_grade")
+  private Integer avgGrade;
+  @JsonProperty("start_latlng")
+  private List<Float> startLatlng = null;
+  @JsonProperty("end_latlng")
+  private List<Float> endLatlng = null;
+  @JsonProperty("elev_difference")
+  private Float elevDifference;
+  @JsonProperty("distance")
+  private Float distance;
+  @JsonProperty("points")
   private String points;
+  @JsonProperty("starred")
+  private Boolean starred;
+  @JsonIgnore
+  private Map<String, Object> additionalProperties = new HashMap<String, Object>();
 
-  public long getId() {
+  @JsonProperty("id")
+  public Integer getId() {
     return id;
   }
 
+  @JsonProperty("id")
+  public void setId(Integer id) {
+    this.id = id;
+  }
+
+  @JsonProperty("resource_state")
+  public Integer getResourceState() {
+    return resourceState;
+  }
+
+  @JsonProperty("resource_state")
+  public void setResourceState(Integer resourceState) {
+    this.resourceState = resourceState;
+  }
+
+  @JsonProperty("name")
   public String getName() {
     return name;
   }
 
-  public int getClimbCategory() {
+  @JsonProperty("name")
+  public void setName(String name) {
+    this.name = name;
+  }
+
+  @JsonProperty("climb_category")
+  public Integer getClimbCategory() {
     return climbCategory;
   }
 
+  @JsonProperty("climb_category")
+  public void setClimbCategory(Integer climbCategory) {
+    this.climbCategory = climbCategory;
+  }
+
+  @JsonProperty("climb_category_desc")
   public String getClimbCategoryDesc() {
     return climbCategoryDesc;
   }
 
-  public double getAvgGrade() {
+  @JsonProperty("climb_category_desc")
+  public void setClimbCategoryDesc(String climbCategoryDesc) {
+    this.climbCategoryDesc = climbCategoryDesc;
+  }
+
+  @JsonProperty("avg_grade")
+  public Integer getAvgGrade() {
     return avgGrade;
   }
 
-  public List getStartLatLong() {
-    return startLatLong;
+  @JsonProperty("avg_grade")
+  public void setAvgGrade(Integer avgGrade) {
+    this.avgGrade = avgGrade;
   }
 
-  public List getEndLatLong() {
-    return endLatLong;
+  @JsonProperty("start_latlng")
+  public List<Float> getStartLatlng() {
+    return startLatlng;
   }
 
-  public double getElevationDifference() {
-    return elevationDifference;
+  @JsonProperty("start_latlng")
+  public void setStartLatlng(List<Float> startLatlng) {
+    this.startLatlng = startLatlng;
   }
 
-  public double getDistance() {
+  @JsonProperty("end_latlng")
+  public List<Float> getEndLatlng() {
+    return endLatlng;
+  }
+
+  @JsonProperty("end_latlng")
+  public void setEndLatlng(List<Float> endLatlng) {
+    this.endLatlng = endLatlng;
+  }
+
+  @JsonProperty("elev_difference")
+  public Float getElevDifference() {
+    return elevDifference;
+  }
+
+  @JsonProperty("elev_difference")
+  public void setElevDifference(Float elevDifference) {
+    this.elevDifference = elevDifference;
+  }
+
+  @JsonProperty("distance")
+  public Float getDistance() {
     return distance;
   }
 
+  @JsonProperty("distance")
+  public void setDistance(Float distance) {
+    this.distance = distance;
+  }
+
+  @JsonProperty("points")
   public String getPoints() {
     return points;
+  }
+
+  @JsonProperty("points")
+  public void setPoints(String points) {
+    this.points = points;
+  }
+
+  @JsonProperty("starred")
+  public Boolean getStarred() {
+    return starred;
+  }
+
+  @JsonProperty("starred")
+  public void setStarred(Boolean starred) {
+    this.starred = starred;
+  }
+
+  @JsonAnyGetter
+  public Map<String, Object> getAdditionalProperties() {
+    return this.additionalProperties;
+  }
+
+  @JsonAnySetter
+  public void setAdditionalProperty(String name, Object value) {
+    this.additionalProperties.put(name, value);
   }
 
   @Override
   public String toString() {
     return "Segment{" +
             "id=" + id +
+            ", resourceState=" + resourceState +
             ", name='" + name + '\'' +
             ", climbCategory=" + climbCategory +
             ", climbCategoryDesc='" + climbCategoryDesc + '\'' +
             ", avgGrade=" + avgGrade +
-            ", startLatLong=" + startLatLong +
-            ", endLatLong=" + endLatLong +
-            ", elevationDifference=" + elevationDifference +
+            ", startLatlng=" + startLatlng +
+            ", endLatlng=" + endLatlng +
+            ", elevDifference=" + elevDifference +
             ", distance=" + distance +
             ", points='" + points + '\'' +
+            ", starred=" + starred +
+            ", additionalProperties=" + additionalProperties +
             '}';
   }
 }
