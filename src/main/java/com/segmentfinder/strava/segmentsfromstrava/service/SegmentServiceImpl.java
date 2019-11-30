@@ -1,10 +1,14 @@
 package com.segmentfinder.strava.segmentsfromstrava.service;
 
 import com.segmentfinder.strava.segmentsfromstrava.client.StravaClient;
+import com.segmentfinder.strava.segmentsfromstrava.domain.AthleteLeaderboardEntry;
 import com.segmentfinder.strava.segmentsfromstrava.domain.DetailedSegment;
+import com.segmentfinder.strava.segmentsfromstrava.domain.Leaderboard;
 import com.segmentfinder.strava.segmentsfromstrava.domain.Segment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.Collections;
 import java.util.List;
 
 
@@ -43,4 +47,55 @@ public class SegmentServiceImpl implements SegmentService {
   private double calculateAthletePaceForSegment(DetailedSegment segment) {
     return segment.getAthleteSegmentStats().getPrElapsedTime() / (segment.getDistance() / 1000);
   }
+
+  /**
+   *
+   * @param id
+   * @param pageNo
+   * @param pageSize
+   */
+  private void matchAthleteTimeWithLeaderboard(Long id, Integer pageNo, Integer pageSize) {
+
+    /*
+    just hardcoded this one for now
+     */
+    Integer userTime = 200;
+
+    /*
+    get list of entries on leaderboard
+     */
+    Leaderboard leaderboard = stravaClient.fetchPagedLeaderboard(id, pageNo, pageSize);
+    List<AthleteLeaderboardEntry> entries =leaderboard.getEntries();
+
+    /*
+    get the first athlete who has a worse time
+     */
+    AthleteLeaderboardEntry athleteLeaderboardForTime =
+            entries.stream().filter(s -> s.getMovingTime() > userTime).findFirst().orElse(null);
+
+    /*
+    get the above athlete's rank
+    et the rank before, that would be the users position
+     */
+    if (athleteLeaderboardForTime != null) {
+      int rank = athleteLeaderboardForTime.getRank();
+      Collections.reverse(entries);
+      AthleteLeaderboardEntry athleteLeaderboardEntryForRank
+              = entries.stream().filter(s -> s.getRank() > rank).findFirst().orElse(null);
+
+      /*
+      user potential rank
+       */
+      int userRank = athleteLeaderboardEntryForRank.getRank();
+    }
+
+
+
+
+
+
+
+
+  }
+
 }

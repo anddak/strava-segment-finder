@@ -1,11 +1,10 @@
 package com.segmentfinder.strava.segmentsfromstrava.client;
 
 import com.segmentfinder.strava.segmentsfromstrava.constants.ControllerConstants;
-import com.segmentfinder.strava.segmentsfromstrava.domain.DetailedSegment;
-import com.segmentfinder.strava.segmentsfromstrava.domain.Segment;
-import com.segmentfinder.strava.segmentsfromstrava.domain.SegmentList;
+import com.segmentfinder.strava.segmentsfromstrava.domain.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+
 
 import java.util.List;
 import java.util.StringJoiner;
@@ -13,7 +12,7 @@ import java.util.StringJoiner;
 @Component
 public class StravaClient {
 
-    public static final String ACCESS_TOKEN = "8780d5b88e647540933cc248b74b82584a855686";
+    public static final String ACCESS_TOKEN = "734050aa2fb80a0f7177119c6ab939e6a415f838";
 
     private RestTemplate restTemplate = new RestTemplate();
 
@@ -60,6 +59,31 @@ public class StravaClient {
         return restTemplate.getForObject(url.toString(), DetailedSegment.class);
 
 
+    }
+
+    /**
+     *
+     * Client to call the leaderboard for a given segment
+     *
+     * @param id segment id
+     * @param pageNo pageNo
+     * @param perPage number of athletes on one page
+     * @return
+     */
+    public Leaderboard fetchPagedLeaderboard(Long id, Integer pageNo, Integer perPage) {
+        StringBuilder url = new StringBuilder(ControllerConstants.STRAVA_BASE_URL)
+                .append(ControllerConstants.STRAVA_SEGMENTS)
+                .append("/")
+                .append(id)
+                .append("leaderboard")
+                .append("page=")
+                .append(pageNo)
+                .append("&per_page")
+                .append(perPage)
+                .append("&access_token=")
+                .append(ACCESS_TOKEN);
+
+        return restTemplate.getForObject(url.toString(), Leaderboard.class);
     }
 
 }
