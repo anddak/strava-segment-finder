@@ -5,6 +5,8 @@ import com.segmentfinder.strava.segmentsfromstrava.domain.AthleteLeaderboardEntr
 import com.segmentfinder.strava.segmentsfromstrava.domain.DetailedSegment;
 import com.segmentfinder.strava.segmentsfromstrava.domain.Leaderboard;
 import com.segmentfinder.strava.segmentsfromstrava.domain.Segment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +16,8 @@ import java.util.List;
 
 @Service
 public class SegmentServiceImpl implements SegmentService {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(SegmentServiceImpl.class);
 
   private StravaClient stravaClient;
 
@@ -52,20 +56,24 @@ public class SegmentServiceImpl implements SegmentService {
    *
    * @param id
    * @param pageNo
-   * @param pageSize
    */
-  private void matchAthleteTimeWithLeaderboard(Long id, Integer pageNo, Integer pageSize) {
+  public int matchAthleteTimeWithLeaderboard(Long id, Integer pageNo) {
+
+    //refactor this method and hook it up with controller properly
+    //bug when multiple runners with same time  and the next one up has more than one second deficit
 
     /*
     just hardcoded this one for now
      */
-    Integer userTime = 200;
+    Integer userTime = 18;
+    int userRank = 0;
+    int firstSlowerUserRank = 0;
 
     /*
     get list of entries on leaderboard
      */
-    Leaderboard leaderboard = stravaClient.fetchPagedLeaderboard(id, pageNo, pageSize);
-    List<AthleteLeaderboardEntry> entries =leaderboard.getEntries();
+    Leaderboard leaderboard = stravaClient.fetchPagedLeaderboard(id, pageNo, 200);
+    List<AthleteLeaderboardEntry> entries =leaderboard.getEntries().subList(0, 200);
 
     /*
     get the first athlete who has a worse time
@@ -73,29 +81,60 @@ public class SegmentServiceImpl implements SegmentService {
     AthleteLeaderboardEntry athleteLeaderboardForTime =
             entries.stream().filter(s -> s.getMovingTime() > userTime).findFirst().orElse(null);
 
+
+    /**
+     * loop through the pages until we find the first athlete with a worse time than our user
+     */
+    while (athleteLeaderboardForTime == null) {
+
+        leaderboard = stravaClient.fetchPagedLeaderboard(id, ++pageNo, 200);
+        entries.addAll(leaderboard.getEntries());
+
+        /*
+        remove the last 5 elements if athlete done the segment
+         */
+        entries = removeOwnEntry(entries);
+
+        athleteLeaderboardForTime = entries.stream().filter(s -> s.getMovingTime() > userTime).findFirst().orElse(null);
+
+        LOGGER.info("Leaderboard entries: {}", entries.size());
+        LOGGER.info("Slowest time on page: {}", entries.get(entries.size() - 1).getElapsedTime());
+      }
+    
     /*
     get the above athlete's rank
-    et the rank before, that would be the users position
+    if the user time is the same as opponent time, rank is the same
+    otherwise, fetch until next rank is found
      */
-    if (athleteLeaderboardForTime != null) {
-      int rank = athleteLeaderboardForTime.getRank();
-      Collections.reverse(entries);
-      AthleteLeaderboardEntry athleteLeaderboardEntryForRank
-              = entries.stream().filter(s -> s.getRank() > rank).findFirst().orElse(null);
+      if (athleteLeaderboardForTime.getMovingTime().equals(userTime)) {
+        userRank = athleteLeaderboardForTime.getRank();
+      } else {
 
-      /*
-      user potential rank
-       */
-      int userRank = athleteLeaderboardEntryForRank.getRank();
+        int rank = athleteLeaderboardForTime.getRank();
+
+        Collections.reverse(entries);
+
+
+          AthleteLeaderboardEntry athleteLeaderboardEntry = entries.stream().filter(s -> s.getRank() < rank).findFirst().orElse(null);
+
+          userRank = entries.size() > 0 && athleteLeaderboardEntry == null ? 1 : athleteLeaderboardEntry.getRank() + 1;
+        }
+
+
+
+        return userRank;
+      }
+
+
+  /*
+  remove the last 5 elements if athlete done the segment
+  */
+  public List<AthleteLeaderboardEntry> removeOwnEntry(List<AthleteLeaderboardEntry> entries) {
+
+    if (entries.size() % 100 != 0) {
+     return entries.subList(0, entries.size() - 5);
     }
-
-
-
-
-
-
-
-
+    return entries;
   }
 
 }

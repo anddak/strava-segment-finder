@@ -12,7 +12,7 @@ import java.util.StringJoiner;
 @Component
 public class StravaClient {
 
-    public static final String ACCESS_TOKEN = "734050aa2fb80a0f7177119c6ab939e6a415f838";
+    public static final String ACCESS_TOKEN = "7f030a35e9cb91c3e4c5d615291936a8b1b6d20b";
 
     private RestTemplate restTemplate = new RestTemplate();
 
@@ -75,10 +75,10 @@ public class StravaClient {
                 .append(ControllerConstants.STRAVA_SEGMENTS)
                 .append("/")
                 .append(id)
-                .append("leaderboard")
-                .append("page=")
+                .append("/leaderboard")
+                .append("?page=")
                 .append(pageNo)
-                .append("&per_page")
+                .append("&per_page=")
                 .append(perPage)
                 .append("&access_token=")
                 .append(ACCESS_TOKEN);

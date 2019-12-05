@@ -10,4 +10,6 @@ public interface SegmentService {
   List<Segment> fetchSegments(List<String> bounds);
 
   DetailedSegment fetchSegmentDetail(Long id);
+
+  int matchAthleteTimeWithLeaderboard(Long id, Integer pageNo);
 }
