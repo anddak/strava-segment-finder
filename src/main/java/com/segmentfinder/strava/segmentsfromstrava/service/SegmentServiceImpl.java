@@ -3,13 +3,13 @@ package com.segmentfinder.strava.segmentsfromstrava.service;
 import com.segmentfinder.strava.segmentsfromstrava.client.StravaClient;
 import com.segmentfinder.strava.segmentsfromstrava.domain.AthleteLeaderboardEntry;
 import com.segmentfinder.strava.segmentsfromstrava.domain.DetailedSegment;
-import com.segmentfinder.strava.segmentsfromstrava.domain.Leaderboard;
 import com.segmentfinder.strava.segmentsfromstrava.domain.Segment;
+import com.segmentfinder.strava.segmentsfromstrava.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -17,124 +17,101 @@ import java.util.List;
 @Service
 public class SegmentServiceImpl implements SegmentService {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(SegmentServiceImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SegmentServiceImpl.class);
+    AthleteLeaderboardEntry athleteLeaderboardEntry;
+    List<AthleteLeaderboardEntry> entries = new ArrayList<>();
+    private StravaClient stravaClient;
+    private UserRepository userRepository;
 
-  private StravaClient stravaClient;
-
-  @Autowired
-  public SegmentServiceImpl(StravaClient stravaClient) {
-    this.stravaClient = stravaClient;
-  }
-
-  public List<Segment> fetchSegments(List<String> bounds) {
-    return stravaClient.fetchSegments(bounds);
-  }
-
-
-
-  public DetailedSegment fetchSegmentDetail(Long id) {
-    DetailedSegment segment = stravaClient.fetchSegmentDetail(id);
-
-    if (segment.getAthleteSegmentStats().getPrElapsedTime() != null) {
-      segment.getAthleteSegmentStats().setAveragePace((int) calculateAthletePaceForSegment(segment));
+    public SegmentServiceImpl(StravaClient stravaClient, UserRepository userRepository) {
+        this.stravaClient = stravaClient;
+        this.userRepository = userRepository;
     }
 
-    System.out.println(segment);
-    return segment;
-  }
+    public List<Segment> fetchSegments(List<String> bounds) {
+        return stravaClient.fetchSegments(bounds);
+    }
 
-  /**
-   * A helper method to calculate the pace of the runner based on the PR time and the segment distance
-   * @param segment the detailed segment object
-   * @return the pace of the athlete in seconds
-   */
-  private double calculateAthletePaceForSegment(DetailedSegment segment) {
-    return segment.getAthleteSegmentStats().getPrElapsedTime() / (segment.getDistance() / 1000);
-  }
 
-  /**
-   *
-   * @param id
-   * @param pageNo
-   */
-  public int matchAthleteTimeWithLeaderboard(Long id, Integer pageNo) {
+    public DetailedSegment fetchSegmentDetail(Long id) {
 
-    //refactor this method and hook it up with controller properly
-    //bug when multiple runners with same time  and the next one up has more than one second deficit
+        DetailedSegment segment = stravaClient.fetchSegmentDetail(id);
 
-    /*
-    just hardcoded this one for now
-     */
-    Integer userTime = 18;
-    int userRank = 0;
-    int firstSlowerUserRank = 0;
+        calculateSegmentPaceIfAthleteHaveSegmentCompletion(segment);
 
-    /*
-    get list of entries on leaderboard
-     */
-    Leaderboard leaderboard = stravaClient.fetchPagedLeaderboard(id, pageNo, 200);
-    List<AthleteLeaderboardEntry> entries =leaderboard.getEntries().subList(0, 200);
+        return segment;
+    }
 
-    /*
-    get the first athlete who has a worse time
-     */
-    AthleteLeaderboardEntry athleteLeaderboardForTime =
-            entries.stream().filter(s -> s.getMovingTime() > userTime).findFirst().orElse(null);
-
+    private void calculateSegmentPaceIfAthleteHaveSegmentCompletion(DetailedSegment segment) {
+        if (segment.getAthleteSegmentStats().getPrElapsedTime() != null) {
+            segment.getAthleteSegmentStats().setAveragePace((int) calculateAthletePaceForSegment(segment));
+        }
+    }
 
     /**
-     * loop through the pages until we find the first athlete with a worse time than our user
+     * A helper method to calculate the pace of the runner based on the PR time and the segment distance
+     *
+     * @param segment the detailed segment object
+     * @return the pace of the athlete in seconds
      */
-    while (athleteLeaderboardForTime == null) {
-
-        leaderboard = stravaClient.fetchPagedLeaderboard(id, ++pageNo, 200);
-        entries.addAll(leaderboard.getEntries());
-
-        /*
-        remove the last 5 elements if athlete done the segment
-         */
-        entries = removeOwnEntry(entries);
-
-        athleteLeaderboardForTime = entries.stream().filter(s -> s.getMovingTime() > userTime).findFirst().orElse(null);
-
-        LOGGER.info("Leaderboard entries: {}", entries.size());
-        LOGGER.info("Slowest time on page: {}", entries.get(entries.size() - 1).getElapsedTime());
-      }
-    
-    /*
-    get the above athlete's rank
-    if the user time is the same as opponent time, rank is the same
-    otherwise, fetch until next rank is found
-     */
-      if (athleteLeaderboardForTime.getMovingTime().equals(userTime)) {
-        userRank = athleteLeaderboardForTime.getRank();
-      } else {
-
-        int rank = athleteLeaderboardForTime.getRank();
-
-        Collections.reverse(entries);
-
-
-          AthleteLeaderboardEntry athleteLeaderboardEntry = entries.stream().filter(s -> s.getRank() < rank).findFirst().orElse(null);
-
-          userRank = entries.size() > 0 && athleteLeaderboardEntry == null ? 1 : athleteLeaderboardEntry.getRank() + 1;
-        }
-
-
-
-        return userRank;
-      }
-
-
-  /*
-  remove the last 5 elements if athlete done the segment
-  */
-  public List<AthleteLeaderboardEntry> removeOwnEntry(List<AthleteLeaderboardEntry> entries) {
-
-    if (entries.size() % 100 != 0) {
-     return entries.subList(0, entries.size() - 5);
+    private double calculateAthletePaceForSegment(DetailedSegment segment) {
+        return segment.getAthleteSegmentStats().getPrElapsedTime() / (segment.getDistance() / 1000);
     }
-    return entries;
-  }
+
+
+    public int getAthleteRank(Long id, Integer pageNo, Integer segmentDistance) {
+
+        // temporarily hardcoded the below two
+        int userTime = userRepository.getUserTime();
+        int userTimeOnSegment = (segmentDistance / 100) * userTime;
+
+
+        athleteLeaderboardEntry = loadLeaderboardEntryPagesUntilFirstSlowerOrEqualAthleteIsFound(id, pageNo, userTimeOnSegment, entries);
+
+        return isUserTimeEqualWithAnotherAthlete(userTimeOnSegment) ?
+                athleteLeaderboardEntry.getRank()
+                : getUserRankIfSegmentTimeIsUnique();
+
+    }
+
+    private int getUserRankIfSegmentTimeIsUnique() {
+        int rank = athleteLeaderboardEntry.getRank();
+       return (!entries.isEmpty()) && findPositionOfFirstSlowerAthlete(rank) == null ? 1 : findPositionOfFirstSlowerAthlete(rank).getRank();
+    }
+
+    private AthleteLeaderboardEntry findPositionOfFirstSlowerAthlete(int rank) {
+        Collections.reverse(entries);
+        return entries.stream().filter(s -> s.getRank() < rank).findFirst().orElse(null);
+    }
+
+    private boolean isUserTimeEqualWithAnotherAthlete(int userTimeOnSegment) {
+        return athleteLeaderboardEntry.getMovingTime().equals(userTimeOnSegment);
+    }
+
+    private AthleteLeaderboardEntry loadLeaderboardEntryPagesUntilFirstSlowerOrEqualAthleteIsFound(Long id, Integer pageNo, int userTimeOnSegment, List<AthleteLeaderboardEntry> entries) {
+        while ((athleteLeaderboardEntry = getFirstAthleteWithWorseTimeThanUser(userTimeOnSegment, entries)) == null) {
+
+            entries.addAll(getSegmentLeaderboardByPage(id, ++pageNo));
+            entries = removeOwnResultFromSegment(entries);
+
+            LOGGER.info("Leaderboard entries: {}", entries.size());
+            LOGGER.info("Slowest time on page: {}", entries.get(entries.size() - 1).getElapsedTime());
+        }
+        return athleteLeaderboardEntry;
+    }
+
+    private List<AthleteLeaderboardEntry> getSegmentLeaderboardByPage(Long id, Integer pageNo) {
+        return stravaClient.fetchPagedLeaderboard(id, pageNo, 200).getEntries();
+    }
+
+    private AthleteLeaderboardEntry getFirstAthleteWithWorseTimeThanUser(int userTimeOnSegment, List<AthleteLeaderboardEntry> entries) {
+        return entries == null ? null : entries.stream().filter(s -> s.getMovingTime() > userTimeOnSegment).findFirst().orElse(null);
+    }
+
+    private List<AthleteLeaderboardEntry> removeOwnResultFromSegment(List<AthleteLeaderboardEntry> entries) {
+        return entries.size() % 100 != 0 ? entries.subList(0, entries.size() - 5) : entries;
+    }
 
 }
+
+//TODO: bug when multiple runners with same time  and the next one up has more than one second deficit

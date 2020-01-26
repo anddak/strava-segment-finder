@@ -12,7 +12,7 @@ import java.util.StringJoiner;
 @Component
 public class StravaClient {
 
-    public static final String ACCESS_TOKEN = "7f030a35e9cb91c3e4c5d615291936a8b1b6d20b";
+    public static final String ACCESS_TOKEN = "9aac92df653674d33623a9569ae4dcd3e180d5f6";
 
     private RestTemplate restTemplate = new RestTemplate();
 

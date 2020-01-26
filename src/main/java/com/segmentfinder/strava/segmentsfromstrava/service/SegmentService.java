@@ -11,5 +11,5 @@ public interface SegmentService {
 
   DetailedSegment fetchSegmentDetail(Long id);
 
-  int matchAthleteTimeWithLeaderboard(Long id, Integer pageNo);
+  int getAthleteRank(Long id, Integer pageNo, Integer segmentDistance);
 }

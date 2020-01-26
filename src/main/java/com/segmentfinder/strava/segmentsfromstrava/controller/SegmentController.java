@@ -1,8 +1,6 @@
 package com.segmentfinder.strava.segmentsfromstrava.controller;
 
-import com.segmentfinder.strava.segmentsfromstrava.domain.AthleteLeaderboardEntry;
 import com.segmentfinder.strava.segmentsfromstrava.domain.DetailedSegment;
-import com.segmentfinder.strava.segmentsfromstrava.domain.Leaderboard;
 import com.segmentfinder.strava.segmentsfromstrava.service.SegmentService;
 import com.segmentfinder.strava.segmentsfromstrava.constants.ControllerConstants;
 import com.segmentfinder.strava.segmentsfromstrava.domain.Segment;
@@ -64,8 +62,8 @@ public class SegmentController {
     
     @GetMapping(value = "/leaderboard", produces = MediaType.APPLICATION_JSON_VALUE)
     @CrossOrigin(value = "http://localhost:3000")
-    public ResponseEntity<Integer> getLeaderboard(@RequestParam Long segmentId, Integer pageNo) {
-        return new ResponseEntity<>(segmentService.matchAthleteTimeWithLeaderboard(segmentId, pageNo), HttpStatus.OK);
+    public ResponseEntity<Integer> getLeaderboard(@RequestParam Long segmentId, Integer pageNo, Integer segmentDistance) {
+        return new ResponseEntity<>(segmentService.getAthleteRank(segmentId, pageNo, segmentDistance), HttpStatus.OK);
     }
 
 }
